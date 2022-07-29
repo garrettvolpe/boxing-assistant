@@ -45,7 +45,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             # Extract landmarks
         try:
             landmarks = results.pose_landmarks.landmark
-            #cords for each landmark in use
+            #coordinates for each landmark in use
             l_shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
             l_elbow = [landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value].y]
             l_wrist = [landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].x, landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value].y]
@@ -59,6 +59,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             cv2.putText(image, str(angle_left_elbow),
                         tuple(np.multiply(l_elbow, [640,480]).astype(int)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5 , (255,255,255), 2, cv2.LINE_AA)
+            print(np.multiply(l_elbow, [640,480]).astype(int))            
 
         except:
             pass
@@ -73,3 +74,5 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 cap.release()
 # Destroy all the windows
 cv2.destroyAllWindows()
+
+
