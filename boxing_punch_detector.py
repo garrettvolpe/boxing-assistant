@@ -93,7 +93,8 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
             #left punch logic 
             if angle_left_elbow < 60:
-                jab_stage = "Defense"
+                if l_pinky[1] < l_shoulder [1]:
+                    jab_stage = "Defense"
             if angle_left_elbow > 110 and jab_stage == "Defense":
                 if angle_lhip_lshoulder_lwrist > 70:
                     if angle_right_elbow < 40:
@@ -106,7 +107,8 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                             
             #right punch logic
             if angle_right_elbow < 60:
-                straight_stage = "Defense"
+                if l_pinky[1] < l_shoulder [1]:
+                    straight_stage = "Defense"
             if angle_right_elbow > 110 and straight_stage == "Defense":
                 if angle_rhip_rshoulder_rwrist > 70:
                     if angle_left_elbow < 40:
@@ -172,6 +174,8 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
             # print(stance_num)
             # print (stance)
+
+
 
         except:
             pass
