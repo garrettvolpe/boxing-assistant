@@ -1,1 +1,5 @@
-This will be a program that uses video to detect when a person in view throws a punch and can identify what type of punch it is.
+**This program can:
+
+-Detect your boxing stance ("Orthodox vs Southpaw").
+-Detect if you are in an offensive or defensive postion.
+-Count the number of Jabs and Straight punches you throw.**
