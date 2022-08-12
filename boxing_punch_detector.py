@@ -55,7 +55,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
             angle = np.abs(radians * 180.0 / np.pi)
 
-            if angle > 180.0:255
+            if angle > 180.0:
                 angle = 360 - angle
 
             return angle
@@ -91,23 +91,31 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                         tuple(np.multiply(l_elbow, [int(video_width),int(video_height)]).astype(int)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5 , (255,255,255), 2, cv2.LINE_AA)
 
-            #Jab logic 
+            #left punch logic 
             if angle_left_elbow < 60:
                 jab_stage = "Defense"
             if angle_left_elbow > 110 and jab_stage == "Defense":
                 if angle_lhip_lshoulder_lwrist > 70:
                     if angle_right_elbow < 40:
-                        jab_stage = "Offense"
-                        jab_counter +=1
-
-            #Straight punch logic
+                        if stance == "Orthodox":
+                            jab_stage = "Offense"
+                            jab_counter +=1
+                        elif stance == "Southpaw":
+                            jab_stage = "Offense"
+                            straight_counter +=1
+                            
+            #right punch logic
             if angle_right_elbow < 60:
                 straight_stage = "Defense"
             if angle_right_elbow > 110 and straight_stage == "Defense":
                 if angle_rhip_rshoulder_rwrist > 70:
                     if angle_left_elbow < 40:
-                        straight_stage = "Offense"
-                        straight_counter +=1
+                        if stance == "Orthodox":
+                            straight_stage = "Offense"
+                            straight_counter +=1
+                        elif stance == "Southpaw":
+                            straight_stage = "Offense"
+                            jab_counter +=1
 
             #Create box for punch counter display   
             cv2.rectangle(image, (0,0), (240,70), (0,0,0), -1)
@@ -130,11 +138,9 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             if jab_stage == "Offense":
                 off_vs_def_box = [0,0,139]    
                 off_vs_def_text = "Offense"
-            print(jab_stage + " " + straight_stage)
             if straight_stage == "Offense":
                 off_vs_def_box = [0,0,139]    
                 off_vs_def_text = "Offense"
-            print(jab_stage + " " + straight_stage)
 
 
             #distance testing
