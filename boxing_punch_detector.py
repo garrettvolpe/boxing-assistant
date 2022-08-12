@@ -1,3 +1,4 @@
+from turtle import pen
 import cv2
 import mediapipe as mp 
 import numpy as np
@@ -42,7 +43,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
         # Render detections
         mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                                  mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
+                                  mp_drawing.DrawingSpec(color=(0, 150, 0), thickness=2, circle_radius=2),
                                   mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=2)
                                   )
         
@@ -54,7 +55,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             radians = np.arctan2(c[1] - b[1], c[0] - b[0]) - np.arctan2(a[1] - b[1], a[0] - b[0])
             angle = np.abs(radians * 180.0 / np.pi)
 
-            if angle > 180.0:
+            if angle > 180.0:255
                 angle = 360 - angle
 
             return angle
@@ -126,12 +127,15 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             if jab_stage and straight_stage == "Defense":
                 off_vs_def_box = [255,0,0]
                 off_vs_def_text = "Defense"
-            if jab_stage or straight_stage == "Offense":
+            if jab_stage == "Offense":
                 off_vs_def_box = [0,0,139]    
                 off_vs_def_text = "Offense"
-            if jab_stage and straight_stage == "Defense":
-                off_vs_def_box = [255,0,0]
-                off_vs_def_text = "Defense"
+            print(jab_stage + " " + straight_stage)
+            if straight_stage == "Offense":
+                off_vs_def_box = [0,0,139]    
+                off_vs_def_text = "Offense"
+            print(jab_stage + " " + straight_stage)
+
 
             #distance testing
             right_hand_distance = int((math.sqrt(r_pinky[1] - nose[1]) ** 2 + (r_pinky[0] - nose[0]) ** 2) * 100)
@@ -160,8 +164,8 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             #Stance printed on screen
             cv2.putText(image, stance, ((int(video_width)-130),(int(video_height -30))), cv2.FONT_HERSHEY_COMPLEX, .5, (0,0,0), 1, cv2.LINE_AA) 
 
-            print(stance_num)
-            print (stance)
+            # print(stance_num)
+            # print (stance)
 
         except:
             pass
