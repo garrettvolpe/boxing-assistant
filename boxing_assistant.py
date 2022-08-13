@@ -1,4 +1,3 @@
-from turtle import pen
 import cv2
 import mediapipe as mp 
 import numpy as np
@@ -60,7 +59,6 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
             return angle
 
-
             # Extract landmarks
         try:
             landmarks = results.pose_landmarks.landmark
@@ -77,20 +75,20 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             l_pinky = [landmarks[mp_pose.PoseLandmark.LEFT_PINKY.value].x, landmarks[mp_pose.PoseLandmark.LEFT_PINKY.value].y]
             r_pinky = [landmarks[mp_pose.PoseLandmark.RIGHT_PINKY.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_PINKY.value].y]
 
+            #Get angles of joints
             angle_left_elbow = calculate_angle(l_shoulder,l_elbow,l_wrist)
-
-            #get right elbow angle
             angle_right_elbow = calculate_angle(r_shoulder,r_elbow,r_wrist)
-
-            #get right hip shoulder to wrist angle 
             angle_rhip_rshoulder_rwrist = calculate_angle(r_hip,r_shoulder,r_wrist)
-
             angle_lhip_lshoulder_lwrist = calculate_angle(l_hip,l_shoulder,l_wrist)
 
-            cv2.putText(image, str(angle_left_elbow),
-                        tuple(np.multiply(l_elbow, [int(video_width),int(video_height)]).astype(int)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5 , (255,255,255), 2, cv2.LINE_AA)
+            #Display angle of joint
+            def display_angle (joint_angle, landmark_for_location ):   
+                cv2.putText(image, str(joint_angle),
+                            tuple(np.multiply(landmark_for_location, [int(video_width),int(video_height)]).astype(int)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5 , (255,255,255), 2, cv2.LINE_AA)
 
+            display_angle(angle_left_elbow, l_elbow)
+            
             #left punch logic 
             if angle_left_elbow < 60:
                 if l_pinky[1] < l_shoulder [1]:
@@ -119,20 +117,23 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                             straight_stage = "Offense"
                             jab_counter +=1
 
-            #Create box for punch counter display   
-            cv2.rectangle(image, (0,0), (240,70), (0,0,0), -1)
-
-            #show jab counter on screen
-            cv2.putText(image, "Jabs: ", (15,15), cv2.FONT_HERSHEY_COMPLEX, .6, (255,255,255), 1, cv2.LINE_AA) 
-            cv2.putText(image, str(jab_counter), (85,15), cv2.FONT_HERSHEY_COMPLEX, .6, (255,255,255), 1, cv2.LINE_AA) 
-
-            #show cross counter on screen
-            cv2.putText(image, "Straights: ", (15,40), cv2.FONT_HERSHEY_COMPLEX, .6, (255,255,255), 1, cv2.LINE_AA) 
-            cv2.putText(image, str(straight_counter), (125,40), cv2.FONT_HERSHEY_COMPLEX, .6, (255,255,255), 1, cv2.LINE_AA) 
+            def create_box (x1,x2,y1,y2,colorBGR):   
+                cv2.rectangle(image, (x1,x2), (y1,y2), (colorBGR), -1)
+            def display_text (text_to_display,x,y,colorBGR):
+                cv2.putText(image, text_to_display, (x,y), cv2.FONT_HERSHEY_COMPLEX, .6, (colorBGR), 1, cv2.LINE_AA)
+            
+            #display punch count on screen
+            create_box (0,0,170,50,(0,0,0))
+            display_text(f"Jabs: {str(jab_counter)}",15,15,(255,255,255))
+            display_text(f"Straights: {str(straight_counter)}",15,40,(255,255,255))
 
             # Show offense vs defense 
-            cv2.rectangle(image, ((int(video_width) - 200),0), (int(video_width),50), (off_vs_def_box), -1)
-            cv2.putText(image, off_vs_def_text, ((int(video_width) - 180),30), cv2.FONT_HERSHEY_COMPLEX, .6, (255,255,255), 1, cv2.LINE_AA) 
+            create_box(int(video_width) - 130,0,int(video_width),50,off_vs_def_box)
+            display_text(off_vs_def_text,int(video_width) - 110,30,(255,255,255))
+
+            #Display stance
+            create_box(int(video_width) - 150,int(video_height - 50),int(video_width),int(video_height),(255,255,255))
+            display_text(stance, int(video_width-130), int(video_height -30), (0,0,0))
 
             if jab_stage and straight_stage == "Defense":
                 off_vs_def_box = [255,0,0]
@@ -143,7 +144,6 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             if straight_stage == "Offense":
                 off_vs_def_box = [0,0,139]    
                 off_vs_def_text = "Offense"
-
 
             #distance testing
             right_hand_distance = int((math.sqrt(r_pinky[1] - nose[1]) ** 2 + (r_pinky[0] - nose[0]) ** 2) * 100)
@@ -167,20 +167,9 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 elif stance_num < 10 and stance_num > 10:
                     stance = ''
 
-            #Stance box
-            cv2.rectangle(image, ((int(video_width) - 150),int(video_height - 50)), (int(video_width),int(video_height)), (255,255,255), -1)
-            #Stance printed on screen
-            cv2.putText(image, stance, ((int(video_width)-130),(int(video_height -30))), cv2.FONT_HERSHEY_COMPLEX, .5, (0,0,0), 1, cv2.LINE_AA) 
-
-            # print(stance_num)
-            # print (stance)
-
-
-
         except:
             pass
 
-        
         # print(calculate_angle(l_shoulder, l_elbow, l_wrist))
         cv2.imshow('Mediapipe Feed', image)
                 
