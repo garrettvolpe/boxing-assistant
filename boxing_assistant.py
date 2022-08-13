@@ -14,6 +14,8 @@ off_vs_def_box = [255,255,255]
 off_vs_def_text = ''
 stance_num = 0
 stance = ""
+display_info = True
+show_landmarks = True
 
 
 # VIDEO FEED
@@ -40,11 +42,25 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
         image.flags.writeable = True
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-        # Render detections
-        mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                                  mp_drawing.DrawingSpec(color=(0, 150, 0), thickness=2, circle_radius=2),
-                                  mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=2)
-                                  )
+        #settings
+        if cv2.waitKey(1) & 0xFF == ord('o'):
+            display_info = False
+        if cv2.waitKey(1) & 0xFF == ord('i'):
+            display_info = True
+        if cv2.waitKey(1) & 0xFF == ord('l'):
+            show_landmarks = False
+            print(display_info)
+        if cv2.waitKey(1) & 0xFF == ord('k'):
+            show_landmarks = True
+            print(display_info)
+
+        if show_landmarks == True:
+            # Render detections
+            mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
+                                    mp_drawing.DrawingSpec(color=(0, 150, 0), thickness=2, circle_radius=2),
+                                    mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=2)
+                                    )
+
         
         def calculate_angle(a, b, c):
             a = np.array(a)  # First
@@ -122,18 +138,19 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             def display_text (text_to_display,x,y,colorBGR):
                 cv2.putText(image, text_to_display, (x,y), cv2.FONT_HERSHEY_COMPLEX, .6, (colorBGR), 1, cv2.LINE_AA)
             
-            #display punch count on screen
-            create_box (0,0,170,50,(0,0,0))
-            display_text(f"Jabs: {str(jab_counter)}",15,15,(255,255,255))
-            display_text(f"Straights: {str(straight_counter)}",15,40,(255,255,255))
+            if display_info == True:
+                #display punch count on screen
+                create_box (0,0,170,50,(0,0,0))
+                display_text(f"Jabs: {str(jab_counter)}",15,15,(255,255,255))
+                display_text(f"Straights: {str(straight_counter)}",15,40,(255,255,255))
 
-            # Show offense vs defense 
-            create_box(int(video_width) - 130,0,int(video_width),50,off_vs_def_box)
-            display_text(off_vs_def_text,int(video_width) - 110,30,(255,255,255))
+                # Show offense vs defense 
+                create_box(int(video_width) - 130,0,int(video_width),50,off_vs_def_box)
+                display_text(off_vs_def_text,int(video_width) - 110,30,(255,255,255))
 
-            #Display stance
-            create_box(int(video_width) - 150,int(video_height - 50),int(video_width),int(video_height),(255,255,255))
-            display_text(stance, int(video_width-130), int(video_height -30), (0,0,0))
+                #Display stance
+                create_box(int(video_width) - 150,int(video_height - 50),int(video_width),int(video_height),(255,255,255))
+                display_text(stance, int(video_width-130), int(video_height -30), (0,0,0))
 
             if jab_stage and straight_stage == "Defense":
                 off_vs_def_box = [255,0,0]
@@ -175,7 +192,10 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-    
+
+
+
+
 # After the loop release the cap object
 cap.release()
 # Destroy all the windows
