@@ -1,12 +1,16 @@
+from multiprocessing.connection import wait
+from traceback import print_tb
 import cv2
 import mediapipe as mp 
 import numpy as np
 import math
 import time 
+import random
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
 jab_counter = 0
+jab_counter_for_game = 0
 straight_counter = 0
 jab_stage = None
 straight_stage = None
@@ -18,48 +22,57 @@ stance = ""
 display_info = True #Option to modify
 show_landmarks = True #Option to modify
 
-startTime = time.time()
+globalStartTime = time.time()
+startTime = ''
 lastTime = startTime
+endTime = ''
 timeValue = ''
+timeForCombo = ''
+frameCounter = 0
+randomFrameNumber = random.randint(30,60)
 
+comboResetChecker = 1
+
+combo = ''
+combos ={
+    1: "Jab",
+    2: "Jab Jab Cross"
+}
 
 # VIDEO FEED
 cap = cv2.VideoCapture(0)
 
 # Get capture info
-video_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH )
-video_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT )
+video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH ))
+video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT ))
 video_fps =  cap.get(cv2.CAP_PROP_FPS)
 with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
     while(True):      
         # Capture the video frame by frame
         ret, frame = cap.read()
-
         # Recolor image to RGB
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image.flags.writeable = False
-
         # Make detection
         results = pose.process(image)
-
         # Recolor back to BGR
         image.flags.writeable = True
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         #settings
-        if cv2.waitKey(1) & 0xFF == ord('o'):
-            display_info = False
-        if cv2.waitKey(1) & 0xFF == ord('i'):
-            display_info = True
-        if cv2.waitKey(1) & 0xFF == ord('l'):
-            show_landmarks = False
-            print(display_info)
-        if cv2.waitKey(1) & 0xFF == ord('k'):
-            show_landmarks = True
-            print(display_info)
+        # if cv2.waitKey(1) & 0xFF == ord('o'):
+        #     display_info = False
+        # if cv2.waitKey(1) & 0xFF == ord('i'):
+        #     display_info = True
+        # if cv2.waitKey(1) & 0xFF == ord('l'):
+        #     show_landmarks = False
+        # if cv2.waitKey(1) & 0xFF == ord('k'):
+        #     show_landmarks = True
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 
-        totalTime = round((time.time() - startTime), 2)
+        totalTime = round((time.time() - globalStartTime), 2)
 
         if show_landmarks == True:
             # Render detections
@@ -107,7 +120,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             #Display angle of joint
             def display_angle (joint_angle, landmark_for_location ):   
                 cv2.putText(image, str(joint_angle),
-                            tuple(np.multiply(landmark_for_location, [int(video_width),int(video_height)]).astype(int)),
+                            tuple(np.multiply(landmark_for_location, [video_width,video_height]).astype(int)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5 , (255,255,255), 2, cv2.LINE_AA)
 
             # display_angle(angle_left_elbow, l_elbow)
@@ -122,6 +135,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                         if stance == "Orthodox":
                             jab_stage = "Offense"
                             jab_counter +=1
+                            jab_counter_for_game +=1
                         elif stance == "Southpaw":
                             jab_stage = "Offense"
                             straight_counter +=1
@@ -139,11 +153,12 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                         elif stance == "Southpaw":
                             straight_stage = "Offense"
                             jab_counter +=1
+                            jab_counter_for_game +=1
 
             def create_box (x1,x2,y1,y2,colorBGR):   
                 cv2.rectangle(image, (x1,x2), (y1,y2), (colorBGR), -1)
-            def display_text (text_to_display,x,y,colorBGR):
-                cv2.putText(image, text_to_display, (x,y), cv2.FONT_HERSHEY_COMPLEX, .6, (colorBGR), 1, cv2.LINE_AA)
+            def display_text (text_to_display,x,y,colorBGR,size=.6):
+                cv2.putText(image, text_to_display, (x,y), cv2.FONT_HERSHEY_COMPLEX, size, (colorBGR), 1, cv2.LINE_AA)
             
             if display_info == True:
                 #display punch count on screen
@@ -152,16 +167,19 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 display_text(f"Straights: {str(straight_counter)}",15,40,(255,255,255))
 
                 # Show offense vs defense 
-                create_box(int(video_width) - 150,0,int(video_width),50,off_vs_def_box)
-                display_text(off_vs_def_text,int(video_width) - 110,30,(255,255,255))
+                create_box(video_width - 150,0,video_width,50,off_vs_def_box)
+                display_text(off_vs_def_text,video_width - 110,30,(255,255,255))
 
                 #Display stance
-                create_box(int(video_width) - 150,int(video_height - 50),int(video_width),int(video_height),(255,255,255))
-                display_text(stance, int(video_width-130), int(video_height -30), (0,0,0))
+                create_box(video_width - 150,video_height - 50,video_width,video_height,(255,255,255))
+                display_text(stance, video_width-130, video_height -30, (0,0,0))
 
                 #Display Timer
-                create_box(0,int(video_height-50),(150),int(video_height),[255,255,255])
-                display_text(str(totalTime), 10,int(video_height-25),(0,0,0))
+                create_box(0,video_height-50,(150),video_height,[255,255,255])
+                display_text(str(timeForCombo), 10,video_height-25,(0,0,0),1)
+
+                #Display Combo
+                display_text(combo,10,200,[0,0,255],1.6)
 
             if jab_stage and straight_stage == "Defense":
                 off_vs_def_box = [255,0,0]
@@ -199,11 +217,40 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
         except:
             pass
 
-        # print(calculate_angle(l_shoulder, l_elbow, l_wrist))
+
+        def timingGame():
+            global frameCounter,combo,startTime,endTime,jab_counter_for_game,timeForCombo,randomFrameNumber
+
+            if frameCounter > randomFrameNumber:
+
+                if combo == '':
+                    combo = combos[1]
+
+                # set a timer for the combo
+                if combo != '' and startTime == '':
+                    startTime = time.time()
+
+
+                #if combo is thrown then end
+                if jab_counter_for_game == 1 and endTime =='':
+                    endTime = time.time();
+                    timeForCombo = round((endTime - startTime),2)   
+                    frameCounter = 0
+                    combo = ''
+                    startTime = ''
+                    endTime = ''
+                    jab_counter_for_game = 0
+                    randomFrameNumber = random.randint(30,60)
+                    
+                    
+
+
+
+
+        timingGame()
+        print(f'start time: {startTime}, endtime: {endTime}, combo: {combo}')
+        frameCounter += 1
         cv2.imshow('Mediapipe Feed', image)
-                
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
 
 
 
