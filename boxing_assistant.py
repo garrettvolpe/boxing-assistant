@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp 
 import numpy as np
 import math
+import time 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
@@ -14,8 +15,12 @@ off_vs_def_box = [255,255,255]
 off_vs_def_text = ''
 stance_num = 0
 stance = ""
-display_info = True
-show_landmarks = True
+display_info = True #Option to modify
+show_landmarks = True #Option to modify
+
+startTime = time.time()
+lastTime = startTime
+timeValue = ''
 
 
 # VIDEO FEED
@@ -25,7 +30,6 @@ cap = cv2.VideoCapture(0)
 video_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH )
 video_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT )
 video_fps =  cap.get(cv2.CAP_PROP_FPS)
-
 with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
     while(True):      
         # Capture the video frame by frame
@@ -53,6 +57,9 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
         if cv2.waitKey(1) & 0xFF == ord('k'):
             show_landmarks = True
             print(display_info)
+
+
+        totalTime = round((time.time() - startTime), 2)
 
         if show_landmarks == True:
             # Render detections
@@ -103,7 +110,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                             tuple(np.multiply(landmark_for_location, [int(video_width),int(video_height)]).astype(int)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5 , (255,255,255), 2, cv2.LINE_AA)
 
-            display_angle(angle_left_elbow, l_elbow)
+            # display_angle(angle_left_elbow, l_elbow)
             
             #left punch logic 
             if angle_left_elbow < 60:
@@ -145,12 +152,16 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 display_text(f"Straights: {str(straight_counter)}",15,40,(255,255,255))
 
                 # Show offense vs defense 
-                create_box(int(video_width) - 130,0,int(video_width),50,off_vs_def_box)
+                create_box(int(video_width) - 150,0,int(video_width),50,off_vs_def_box)
                 display_text(off_vs_def_text,int(video_width) - 110,30,(255,255,255))
 
                 #Display stance
                 create_box(int(video_width) - 150,int(video_height - 50),int(video_width),int(video_height),(255,255,255))
                 display_text(stance, int(video_width-130), int(video_height -30), (0,0,0))
+
+                #Display Timer
+                create_box(0,int(video_height-50),(150),int(video_height),[255,255,255])
+                display_text(str(totalTime), 10,int(video_height-25),(0,0,0))
 
             if jab_stage and straight_stage == "Defense":
                 off_vs_def_box = [255,0,0]
@@ -184,6 +195,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 elif stance_num < 10 and stance_num > 10:
                     stance = ''
 
+            
         except:
             pass
 
