@@ -11,10 +11,10 @@
 
 #### Press and hold the key:
 
-O = turn the information display off
+O = Turn the information display off
 
-I = turn the information display on
+I = Turn the information display on
 
-L = turn the pose detection landmarks off
+L = Turn the pose detection landmarks off
 
-K = turn the pose detection landmarks on
+K = Turn the pose detection landmarks on
