@@ -12,6 +12,7 @@ mp_pose = mp.solutions.pose
 jab_counter = 0
 jab_counter_for_game = 0
 straight_counter = 0
+straight_counter_for_game = 0
 jab_stage = None
 straight_stage = None
 box_color = [255,255,255]
@@ -35,8 +36,9 @@ comboResetChecker = 1
 
 combo = ''
 combos ={
-    1: "Jab",
-    2: "Jab Jab Cross"
+    1: "1",
+    2: "2",
+    3: "1,2"
 }
 
 numberOfCorrect = 0
@@ -142,6 +144,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                         elif stance == "Southpaw":
                             jab_stage = "Offense"
                             straight_counter +=1
+                            straight_counter_for_game +=1
                             
             #right punch logic
             if angle_right_elbow < 60:
@@ -153,6 +156,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                         if stance == "Orthodox":
                             straight_stage = "Offense"
                             straight_counter +=1
+                            straight_counter_for_game +=1
                         elif stance == "Southpaw":
                             straight_stage = "Offense"
                             jab_counter +=1
@@ -229,41 +233,58 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             pass
 
 
-        def timingGame():
-            global frameCounter,combo,startTime,endTime,jab_counter_for_game,timeForCombo,randomFrameNumber
-            global numberOfTooSlow,numberOfCorrect
+        def timingGame(diffulty=1):
+            global frameCounter,combo,startTime,endTime,jab_counter_for_game,timeForCombo
+            global numberOfTooSlow,numberOfCorrect,randomFrameNumber,straight_counter_for_game
+
+            def comboToLogic(argument):
+                match argument:
+                    case "1":
+                        if jab_counter_for_game == 1 and endTime =='':
+                            return True
+                    case "2":
+                        if straight_counter_for_game == 1 and endTime =='':
+                            return True
+                    case "1,2":
+                        if jab_counter_for_game == 1 and straight_counter_for_game == 1 and endTime =='':
+                            return True                        
+                    case default:
+                        return "NA"
 
             if frameCounter > randomFrameNumber:
 
+                #provide a combo
                 if combo == '':
-                    combo = combos[1]
+                    combo = combos[random.randint(1,len(combos))]
 
-                # set a timer for the combo
+                # set start timer for the combo
                 if combo != '' and startTime == '':
                     startTime = time.time()
 
 
-                #if combo is thrown then end
-                if jab_counter_for_game == 1 and endTime =='':
+                #if combo is thrown then end and reset stats
+                # if jab_counter_for_game == 1 and endTime =='':
+                if comboToLogic(combo) == True:
                     endTime = time.time();
                     timeForCombo = round((endTime - startTime),2)
-                    if timeForCombo < 1:
+                    if timeForCombo < diffulty:
                         numberOfCorrect += 1
-                    if timeForCombo > 1:
+                    if timeForCombo > diffulty:
                         numberOfTooSlow +=1   
                     frameCounter = 0
                     combo = ''
                     startTime = ''
                     endTime = ''
                     jab_counter_for_game = 0
-                    randomFrameNumber = random.randint(30,60)
+                    straight_counter_for_game = 0
+                    randomFrameNumber = random.randint(30,90)
                     
                     
 
 
 
 
-        timingGame()
+        timingGame(1.5)
         print(f'start time: {startTime}, endtime: {endTime}, combo: {combo}')
         frameCounter += 1
         cv2.imshow('Mediapipe Feed', image)
