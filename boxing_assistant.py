@@ -39,6 +39,9 @@ combos ={
     2: "Jab Jab Cross"
 }
 
+numberOfCorrect = 0
+numberOfTooSlow = 0
+
 # VIDEO FEED
 cap = cv2.VideoCapture(0)
 
@@ -157,29 +160,37 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
             def create_box (x1,x2,y1,y2,colorBGR):   
                 cv2.rectangle(image, (x1,x2), (y1,y2), (colorBGR), -1)
-            def display_text (text_to_display,x,y,colorBGR,size=.6):
-                cv2.putText(image, text_to_display, (x,y), cv2.FONT_HERSHEY_COMPLEX, size, (colorBGR), 1, cv2.LINE_AA)
+            def display_text (text_to_display,x,y,colorBGR,size=.6,thickness=1):
+                cv2.putText(image, text_to_display, (x,y), cv2.FONT_HERSHEY_COMPLEX, size, (colorBGR), thickness, cv2.LINE_AA)
             
             if display_info == True:
                 #display punch count on screen
-                create_box (0,0,170,50,(0,0,0))
-                display_text(f"Jabs: {str(jab_counter)}",15,15,(255,255,255))
-                display_text(f"Straights: {str(straight_counter)}",15,40,(255,255,255))
+                create_box (0,0,200,50,(0,0,0))
+                display_text(f"Total Jabs: {str(jab_counter)}",10,15,(255,255,255))
+                display_text(f"Total Straights: {str(straight_counter)}",10,40,(255,255,255))
 
                 # Show offense vs defense 
                 create_box(video_width - 150,0,video_width,50,off_vs_def_box)
                 display_text(off_vs_def_text,video_width - 110,30,(255,255,255))
 
                 #Display stance
-                create_box(video_width - 150,video_height - 50,video_width,video_height,(255,255,255))
-                display_text(stance, video_width-130, video_height -30, (0,0,0))
+                create_box(video_width - 150,(50),video_width,100,(255,255,255))
+                display_text(stance, video_width-130, 80, (0,0,0))
 
                 #Display Timer
                 create_box(0,video_height-50,(150),video_height,[255,255,255])
                 display_text(str(timeForCombo), 10,video_height-25,(0,0,0),1)
 
-                #Display Combo
-                display_text(combo,10,200,[0,0,255],1.6)
+                # Display Combo
+                create_box(270,0,(400),60,[255,255,255])
+                display_text(combo,(280),50,[0,0,255],1.8,2)
+
+                 # display correct or incorrect
+                create_box(video_width - 150,(video_height-50),video_width,video_height,(255,255,255))
+                display_text("Correct: ", (video_width-140), (video_height-30), (0,0,0))
+                display_text(str(numberOfCorrect), (video_width-50), (video_height-30), (0,0,0))
+                display_text("Incorrect: ", (video_width-140), (video_height-10), (0,0,0))
+                display_text(str(numberOfTooSlow), (video_width-35), (video_height-10), (0,0,0))
 
             if jab_stage and straight_stage == "Defense":
                 off_vs_def_box = [255,0,0]
@@ -220,6 +231,7 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
         def timingGame():
             global frameCounter,combo,startTime,endTime,jab_counter_for_game,timeForCombo,randomFrameNumber
+            global numberOfTooSlow,numberOfCorrect
 
             if frameCounter > randomFrameNumber:
 
@@ -234,7 +246,11 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 #if combo is thrown then end
                 if jab_counter_for_game == 1 and endTime =='':
                     endTime = time.time();
-                    timeForCombo = round((endTime - startTime),2)   
+                    timeForCombo = round((endTime - startTime),2)
+                    if timeForCombo < 1:
+                        numberOfCorrect += 1
+                    if timeForCombo > 1:
+                        numberOfTooSlow +=1   
                     frameCounter = 0
                     combo = ''
                     startTime = ''
