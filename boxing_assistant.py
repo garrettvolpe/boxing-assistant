@@ -6,6 +6,7 @@ import numpy as np
 import math
 import time 
 import random
+
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
 
@@ -13,6 +14,8 @@ jab_counter = 0
 jab_counter_for_game = 0
 straight_counter = 0
 straight_counter_for_game = 0
+lead_hook_counter = 0 
+lead_hook_counter_for_game = 0 
 jab_stage = None
 straight_stage = None
 box_color = [255,255,255]
@@ -31,7 +34,6 @@ timeValue = ''
 timeForCombo = ''
 frameCounter = 0
 randomFrameNumber = random.randint(30,60)
-
 comboResetChecker = 1
 
 combo = ''
@@ -97,7 +99,6 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
             if angle > 180.0:
                 angle = 360 - angle
-
             return angle
 
             # Extract landmarks
@@ -122,14 +123,20 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             angle_rhip_rshoulder_rwrist = calculate_angle(r_hip,r_shoulder,r_wrist)
             angle_lhip_lshoulder_lwrist = calculate_angle(l_hip,l_shoulder,l_wrist)
 
+
             #Display angle of joint
             def display_angle (joint_angle, landmark_for_location ):   
                 cv2.putText(image, str(joint_angle),
                             tuple(np.multiply(landmark_for_location, [video_width,video_height]).astype(int)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5 , (255,255,255), 2, cv2.LINE_AA)
-
             # display_angle(angle_left_elbow, l_elbow)
-            
+            display_angle(left_wrist_to_elbow, l_wrist)
+            display_angle(left_elbow_to_shoulder, l_shoulder)
+        except:
+            pass
+
+
+        try:
             #left punch logic 
             if angle_left_elbow < 60:
                 if l_pinky[1] < l_shoulder [1]:
@@ -169,9 +176,10 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
             
             if display_info == True:
                 #display punch count on screen
-                create_box (0,0,200,50,(0,0,0))
+                create_box (0,0,250,75,(0,0,0))
                 display_text(f"Total Jabs: {str(jab_counter)}",10,15,(255,255,255))
                 display_text(f"Total Straights: {str(straight_counter)}",10,40,(255,255,255))
+                display_text(f"Total Lead Hooks: {str(lead_hook_counter)}",10,65,(255,255,255))
 
                 # Show offense vs defense 
                 create_box(video_width - 150,0,video_width,50,off_vs_def_box)
@@ -206,7 +214,17 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                 off_vs_def_box = [0,0,139]    
                 off_vs_def_text = "Offense"
 
-            #distance testing
+
+            #get length of arm
+            left_wrist_to_elbow = int(math.sqrt(((l_elbow[0] - l_wrist[0]) * (l_elbow[0] - l_wrist[0])) + ((l_elbow[1] - l_wrist[1]) * (l_elbow[1] - l_wrist[1]))) * 100)
+
+            left_elbow_to_shoulder = int(math.sqrt(((l_elbow[0] - l_shoulder[0]) * (l_elbow[0] - l_shoulder[0])) + ((l_elbow[1] - l_shoulder[1]) * (l_elbow[1] - l_shoulder[1]))) * 100)
+
+            left_shoulder_to_wrist = int(math.sqrt(((l_wrist[0] - l_shoulder[0]) * (l_wrist[0] - l_shoulder[0])) + ((l_wrist[1] - l_shoulder[1]) * (l_wrist[1] - l_shoulder[1]))) * 100)
+            
+            length_of_arm = left_wrist_to_elbow + left_elbow_to_shoulder
+            
+            # distance testing
             right_hand_distance = int((math.sqrt(r_pinky[1] - nose[1]) ** 2 + (r_pinky[0] - nose[0]) ** 2) * 100)
             left_hand_distance = int((math.sqrt(l_pinky[1] - nose[1]) ** 2 + (l_pinky[0] - nose[0]) ** 2) * 100)
             
@@ -234,10 +252,15 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
 
         def timingGame(diffulty=1):
+            import playsound
             global frameCounter,combo,startTime,endTime,jab_counter_for_game,timeForCombo
             global numberOfTooSlow,numberOfCorrect,randomFrameNumber,straight_counter_for_game
+            
 
             def comboToLogic(argument):
+                global jab_counter_for_game
+                global straight_counter_for_game
+
                 match argument:
                     case "1":
                         if jab_counter_for_game == 1 and endTime =='':
@@ -247,9 +270,13 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                             return True
                     case "1,2":
                         if jab_counter_for_game == 1 and straight_counter_for_game == 1 and endTime =='':
-                            return True                        
+                            return True
+                        if jab_counter_for_game >= 2:
+                            jab_counter_for_game = 0
+                        if straight_counter_for_game >= 2:
+                            straight_counter_for_game = 0                       
                     case default:
-                        return "NA"
+                        return False
 
             if frameCounter > randomFrameNumber:
 
@@ -263,13 +290,14 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
 
 
                 #if combo is thrown then end and reset stats
-                # if jab_counter_for_game == 1 and endTime =='':
                 if comboToLogic(combo) == True:
                     endTime = time.time();
                     timeForCombo = round((endTime - startTime),2)
                     if timeForCombo < diffulty:
+                        # playsound.playsound("correct.mp3")
                         numberOfCorrect += 1
                     if timeForCombo > diffulty:
+                        # playsound.playsound("incorrect.mp3")
                         numberOfTooSlow +=1   
                     frameCounter = 0
                     combo = ''
@@ -281,11 +309,9 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
                     
                     
 
-
-
-
-        timingGame(1.5)
-        print(f'start time: {startTime}, endtime: {endTime}, combo: {combo}')
+        # timingGame(1.5)
+        # if frameCounter % 30 == 0:
+        #     print(f" length of arm: {length_of_arm}\n distance from shoulder to wrist: {left_shoulder_to_wrist}")
         frameCounter += 1
         cv2.imshow('Mediapipe Feed', image)
 
